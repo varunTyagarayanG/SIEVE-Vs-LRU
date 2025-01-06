@@ -1,17 +1,3 @@
-#!/usr/bin/env python3
-# -*- encoding: utf-8 -*-
-#
-# An implementation of the SIEVE cache eviction algorithm. SIEVE has two
-# desirable properties:
-#
-# - Lazy promotion
-# - Quick demotion
-#
-# One of the really nice attributes of SIEVE is that it doesn't require
-# any locking for cache hits because, unlike LRU, objects do not change
-# position. This alone contributes to a 2x increase in throughput
-# compared with Python's lru_cache().
-
 from functools import _make_key
 from _thread import RLock
 
