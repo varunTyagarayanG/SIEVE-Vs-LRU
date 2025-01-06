@@ -120,7 +120,6 @@ def _my_lru_wrapper(user_func, maxsize):
                 # Insert new key at root (which turns from a root node
                 # into a regular one) and convert an existing node into
                 # a root node (and "evict" it).
-                #
                 # All this dance is required to limit updates to just the
                 # KEY and RESULT fields and avoid updating PREV/NEXT links.
                 oldroot = root
