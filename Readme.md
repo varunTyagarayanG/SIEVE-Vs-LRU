@@ -9,81 +9,97 @@ This implementation introduces the SIEVE cache eviction algorithm alongside a cu
 2. **Quick Demotion:** Items can be efficiently evicted when needed.
 3. **Thread-Safety:** SIEVE does not require locks for cache hits, unlike LRU, resulting in increased throughput.
 
-### Benchmark Output
+
+### Benchmarking Overview in the Code
+
+1. **Benchmark Scenarios**:
+   - **Cache Hit**: Tests how quickly the cache returns a value for a key that is already stored in the cache.
+     - Functions:
+       - `sieve_cache_test_hit()`
+       - `lru_cache_test_hit()`
+   - **Cache Miss**: Tests how the cache handles the addition of new values (when a key is not found in the cache).
+     - Functions:
+       - `sieve_cache_test_miss()`
+       - `lru_cache_test_miss()`
+
+2. **Using `benchmark`**:
+   - `benchmark` is a fixture provided by `pytest-benchmark`. It runs the specified test function multiple times and measures:
+     - Execution time.
+     - Statistical metrics like mean, median, and standard deviation of runtimes.
+   - The results are saved for analysis using `--benchmark-save=benchmark_results`.
+
+3. **How It Works**:
+   - The `benchmark` fixture runs the corresponding test function multiple times under controlled conditions.
+   - For example, in `test_sieve_hit`, it repeatedly calls `sieve_cache_test_hit`, which simply retrieves a cached value.
+   - Similarly, `test_sieve_miss` tests the behavior when many new values are added to the cache (forcing evictions and insertions).
+
+---
+
+# Benchmark Report
+
+### Summary
+This report provides a detailed analysis of the benchmark results for four test cases. The benchmark metrics include **execution time** (minimum, maximum, mean, median), **standard deviation**, **interquartile range (IQR)**, **outliers**, **operations per second (OPS)**, and the **number of rounds and iterations** executed.
+
+---
+
+## Benchmark Results
+
 ![Benchmark Results](Images/image.png)
 
-### Analysis of Benchmark Results
+---
 
-The benchmark results provide insights into the performance of the SIEVE and LRU cache eviction algorithms:
+## **Legend**
 
-1. **Cache Hits**
-   - **SIEVE**: The SIEVE algorithm shows a lower mean time (0.0004 ms) compared to LRU (0.0006 ms) for cache hits. This indicates that SIEVE is slightly faster in retrieving items from the cache, likely due to its lazy promotion feature, which reduces unnecessary operations.
-   - **LRU**: While slightly slower, LRU's performance is still competitive. However, the higher standard deviation (0.0003 ms) suggests more variability in response time compared to SIEVE (0.0001 ms).
+### **1. Min, Max, and Mean (Time in ms)**
+- **Min:** Minimum time taken for a single iteration of the test.
+- **Max:** Maximum time taken for a single iteration of the test.
+- **Mean:** Average time taken for a single iteration of the test.
 
-2. **Cache Misses**
-   - **SIEVE**: For cache misses, SIEVE has a mean time of 0.6657 ms, which is slightly better than LRU's 0.6837 ms. This efficiency is attributed to SIEVE's quick demotion strategy that efficiently identifies and evicts unvisited items.
-   - **LRU**: The LRU algorithm, while slightly slower, is still a robust choice for scenarios where cache misses are less frequent.
+### **2. StdDev (Standard Deviation)**
+- Shows the variation in execution time for a test. A higher value indicates more inconsistency.
 
-3. **Operations Per Second (OPS)**
-   - The OPS metric further highlights SIEVE's advantage in both cache hits and misses, with higher operations per second compared to LRU.
+### **3. Median**
+- The middle value of all iterations, indicating a typical execution time.
 
-### Conclusion
+### **4. IQR (Interquartile Range)**
+- Measures the range within which the central 50% of the test execution times lie.
 
-The SIEVE algorithm demonstrates superior performance in both cache hits and misses, making it a more efficient choice for scenarios requiring high throughput and low latency. Its design optimizes cache operations by minimizing unnecessary promotions and efficiently handling evictions. LRU, while slightly less performant, remains a viable option, especially in environments where its simplicity and predictability are preferred.
+### **5. Outliers**
+- Counts of test executions that fall outside the normal range. Shown in two formats:
+  - Left: Low outliers
+  - Right: High outliers
+
+### **6. OPS (Kops/s - Operations Per Second)**
+- Indicates the number of operations the test can execute per second. Higher is better.
+
+### **7. Rounds**
+- The total number of rounds the test was executed.
+
+### **8. Iterations**
+- Number of iterations performed per round. A higher iteration count can give more accurate benchmarking results.
 
 ---
 
-## Code Details
+## **Key Observations**
 
-### SIEVE Cache Implementation
-The `sieve_cache` decorator uses the SIEVE algorithm to optimize cache performance. The cache maintains a doubly linked list to track access patterns and efficiently evict entries.
+1. **Fastest Test:**
+   - **`test_sieve_hit`** achieved the highest operations per second (**2,636.7047 Kops/s**) and had the lowest mean execution time (**0.0004 ms**).
 
-#### Key Highlights
-- **Lazy Promotion:** Items are marked as visited without altering their positions.
-- **Quick Demotion:** A traversal identifies unvisited items for eviction.
-- **Thread-Safe:** Ensures safe concurrent access with `_thread.RLock`.
+2. **Slowest Test:**
+   - **`test_lru_miss`** had the lowest operations per second (**1.4103 Kops/s**) and the highest mean execution time (**0.7091 ms**).
 
-### LRU Cache Implementation
-The custom `lru_cache` decorator uses a circular doubly linked list to implement the traditional LRU cache eviction policy.
+3. **Hit vs Miss Performance:**
+   - **Hit cases** (both `test_sieve_hit` and `test_lru_hit`) performed significantly faster than **miss cases** (`test_sieve_miss` and `test_lru_miss`), indicating efficient cache hits.
 
-#### Key Highlights
-- **Promotion on Access:** Recently accessed items are moved to the front.
-- **Eviction Policy:** Oldest items are evicted when the cache reaches capacity.
+4. **Outlier Variations:**
+   - `test_lru_hit` shows a high number of outliers (**2,163 low; 4,928 high**), suggesting variability in runtime performance.
+   - Miss cases (`test_sieve_miss` and `test_lru_miss`) also exhibit significant outliers, indicating potential inconsistencies during cache misses.
 
----
-
-## Functions
-
-### SIEVE Cache Functions
-1. **`sieve_cache(maxsize=128):`**
-   - A decorator for caching functions with the SIEVE eviction policy.
-   - **Arguments:** `maxsize` (default=128) determines the maximum cache size.
-
-2. **`_sieve_wrapper(user_func, maxsize):`**
-   - Core function implementing the SIEVE cache logic.
-
-### LRU Cache Functions
-1. **`lru_cache(maxsize=128):`**
-   - A decorator for caching functions with the LRU eviction policy.
-   - **Arguments:** `maxsize` (default=128) determines the maximum cache size.
-
-2. **`_my_lru_wrapper(user_func, maxsize):`**
-   - Core function implementing the LRU cache logic.
+5. **Standard Deviation:**
+   - `test_lru_miss` had the highest standard deviation (**0.1747 ms**), reflecting variability and potential inefficiencies during execution.
 
 ---
 
-## Benchmarking
-The benchmarking tests measure the performance of cache hits and misses for both SIEVE and LRU implementations. `pytest-benchmark` is used for this purpose.
-
-
-### Benchmarking Functions
-1. **SIEVE Tests**
-   - **`sieve_cache_test_hit:`** Tests cache hits for SIEVE.
-   - **`sieve_cache_test_miss:`** Tests cache misses for SIEVE.
-
-2. **LRU Tests**
-   - **`lru_cache_test_hit:`** Tests cache hits for LRU.
-   - **`lru_cache_test_miss:`** Tests cache misses for LRU.
 
 ### Installation
 Before running the benchmarks, ensure you have the necessary dependencies installed:
@@ -95,7 +111,7 @@ pip install pytest pytest-benchmark
 ### Command to Run Benchmarks
 Run the following command to execute benchmarks and save results:
 ```bash
-pytest --benchmark-save=benchmark_results
+pytest test_sieve.py --benchmark-min-rounds=10
 ```
 
 ---
