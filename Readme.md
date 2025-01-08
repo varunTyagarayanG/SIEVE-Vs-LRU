@@ -44,7 +44,8 @@ This report provides a detailed analysis of the benchmark results for four test 
 
 ## Benchmark Results
 
-![Benchmark Results](Images\image-2.jpeg)
+![Benchmark Results](./Images/image-2.jpeg)
+
 
 ---
 
