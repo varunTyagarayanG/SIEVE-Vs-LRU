@@ -44,7 +44,8 @@ This report provides a detailed analysis of the benchmark results for four test 
 
 ## Benchmark Results
 
-![Benchmark Results](Images/image.png)
+![Benchmark Results](./Images/image-2.jpeg)
+
 
 ---
 
@@ -83,22 +84,26 @@ This report provides a detailed analysis of the benchmark results for four test 
 ## **Key Observations**
 
 1. **Fastest Test:**
-   - **`test_sieve_hit`** achieved the highest operations per second (**2,636.7047 Kops/s**) and had the lowest mean execution time (**0.0004 ms**).
+   - **`test_sieve_hit`** achieved the highest operations per second (**2,657.7021 Kops/s**) and the lowest mean execution time (**0.0004 ms**), making it the fastest test.
 
-2. **Slowest Test:**
-   - **`test_lru_miss`** had the lowest operations per second (**1.4103 Kops/s**) and the highest mean execution time (**0.7091 ms**).
+2. **Second Fastest Test:**
+   - **`test_fifo_hit`** had **2,289.1901 Kops/s**, performing close to `test_sieve_hit`, but slightly slower in terms of mean execution time (**0.0004 ms**).
 
-3. **Hit vs Miss Performance:**
-   - **Hit cases** (both `test_sieve_hit` and `test_lru_hit`) performed significantly faster than **miss cases** (`test_sieve_miss` and `test_lru_miss`), indicating efficient cache hits.
+3. **Slowest Test:**
+   - **`test_lru_miss`** was the slowest, with the lowest operations per second (**1.3719 Kops/s**) and the highest mean execution time (**0.7289 ms**).
 
-4. **Outlier Variations:**
-   - `test_lru_hit` shows a high number of outliers (**2,163 low; 4,928 high**), suggesting variability in runtime performance.
-   - Miss cases (`test_sieve_miss` and `test_lru_miss`) also exhibit significant outliers, indicating potential inconsistencies during cache misses.
+4. **Miss vs Hit Performance:**
+   - Hit cases (e.g., `test_sieve_hit`, `test_fifo_hit`, and `test_lru_hit`) performed much faster than miss cases (`test_sieve_miss`, `test_fifo_miss`, and `test_lru_miss`).
 
-5. **Standard Deviation:**
-   - `test_lru_miss` had the highest standard deviation (**0.1747 ms**), reflecting variability and potential inefficiencies during execution.
+5. **Outlier Variations:**
+   - **`test_fifo_hit`** showed the highest number of outliers (**3,175 low; 7,449 high**), suggesting runtime variability.
+   - Miss cases, such as `test_fifo_miss` and `test_lru_miss`, also showed significant variability, indicated by high outliers.
 
----
+6. **Standard Deviation:**
+   - Miss cases had significantly higher standard deviations compared to hit cases, with **`test_fifo_miss`** having the highest standard deviation (**0.1525 ms**).
+
+## **Best Performing Test**
+- **`test_sieve_hit`** is the best-performing test overall, with the fastest execution time and highest operations per second.
 
 
 ### Installation

@@ -1,5 +1,6 @@
 from functools import _make_key
 from _thread import RLock
+import os
 
 def _sieve_wrapper(user_func, maxsize):
     cache = {}
@@ -74,9 +75,6 @@ def sieve_cache(maxsize=128):
         return w
     return wrapper
 
-from functools import _make_key
-from _thread import RLock
-
 def _my_lru_wrapper(user_func, maxsize):
     cache = {}
     root = []
@@ -147,8 +145,45 @@ def lru_cache(maxsize=128):
         return w
     return wrapper
 
-import os
+# FIFO Cache Implementation
+def _fifo_wrapper(user_func, maxsize):
+    cache = {}
+    queue = []
+    cache_get = cache.get
+    cache_len = cache.__len__ 
+    lock = RLock()
 
+    def wrapper(*args, **kwargs):
+        key = _make_key(args, kwargs, typed=False)
+        with lock:
+            link = cache_get(key)
+            if link is not None:
+                return link
+
+        result = user_func(*args, **kwargs)
+        with lock:
+            # Cache miss
+            if key in cache:
+                pass
+            elif cache_len() >= maxsize:
+                # Evict the first inserted item (FIFO)
+                oldest_key = queue.pop(0)
+                del cache[oldest_key]
+
+            # Add new item to the cache
+            cache[key] = result
+            queue.append(key)
+
+        return result
+    return wrapper
+
+def fifo_cache(maxsize=128):
+    def wrapper(user_func):
+        w = _fifo_wrapper(user_func, maxsize)
+        return w
+    return wrapper
+
+# Test Functions
 @sieve_cache(maxsize=128)
 def func_sieve(obj):
     return obj
@@ -157,6 +192,11 @@ def func_sieve(obj):
 def func_lru(obj):
     return obj
 
+@fifo_cache(maxsize=128)
+def func_fifo(obj):
+    return obj
+
+# Benchmarking
 def sieve_cache_test_hit():
     func_sieve(1)
 
@@ -169,6 +209,12 @@ def lru_cache_test_hit():
 def test_lru_hit(benchmark):
     benchmark(lru_cache_test_hit)
 
+def fifo_cache_test_hit():
+    func_fifo(1)
+
+def test_fifo_hit(benchmark):
+    benchmark(fifo_cache_test_hit)
+
 def sieve_cache_test_miss():
     for i in range(1000):
         func_sieve(i)
@@ -176,15 +222,19 @@ def sieve_cache_test_miss():
 def test_sieve_miss(benchmark):
     benchmark(sieve_cache_test_miss)
 
-def lru_cache_test_hit():
-    func_lru(1)
-
 def lru_cache_test_miss():
     for i in range(1000):
         func_lru(i)
 
 def test_lru_miss(benchmark):
     benchmark(lru_cache_test_miss)
+
+def fifo_cache_test_miss():
+    for i in range(1000):
+        func_fifo(i)
+
+def test_fifo_miss(benchmark):
+    benchmark(fifo_cache_test_miss)
 
 if __name__ == "__main__":
     os.system("pytest --benchmark-save=benchmark_results")
