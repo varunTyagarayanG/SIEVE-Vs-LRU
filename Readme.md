@@ -9,114 +9,96 @@ This implementation introduces the SIEVE cache eviction algorithm alongside a cu
 2. **Quick Demotion:** Items can be efficiently evicted when needed.
 3. **Thread-Safety:** SIEVE does not require locks for cache hits, unlike LRU, resulting in increased throughput.
 
+# Benchmarking Observations
 
-### Benchmarking Overview in the Code
+## **Pytest Benchmark Results**
+![Benchmark Results](./Images/pytest-benchmakring-results.png)
 
-1. **Benchmark Scenarios**:
-   - **Cache Hit**: Tests how quickly the cache returns a value for a key that is already stored in the cache.
-     - Functions:
-       - `sieve_cache_test_hit()`
-       - `lru_cache_test_hit()`
-   - **Cache Miss**: Tests how the cache handles the addition of new values (when a key is not found in the cache).
-     - Functions:
-       - `sieve_cache_test_miss()`
-       - `lru_cache_test_miss()`
+### Cache Hits:
+1. **Sieve Cache Hit**:
+   - Min: **0.0023 ms**
+   - Max: **0.3640 ms**
+   - Mean: **0.0025 ms** (fastest among all hits, with a relative speed of **1.0**).
+   - Operations per second (OPS): **393.170 Kops/s**
 
-2. **Using `benchmark`**:
-   - `benchmark` is a fixture provided by `pytest-benchmark`. It runs the specified test function multiple times and measures:
-     - Execution time.
-     - Statistical metrics like mean, median, and standard deviation of runtimes.
-   - The results are saved for analysis using `--benchmark-save=benchmark_results`.
+2. **FIFO Cache Hit**:
+   - Min: **0.0030 ms**
+   - Max: **0.4003 ms**
+   - Mean: **0.0041 ms** (relative speed of **1.63**).
+   - OPS: **241.477 Kops/s**
 
-3. **How It Works**:
-   - The `benchmark` fixture runs the corresponding test function multiple times under controlled conditions.
-   - For example, in `test_sieve_hit`, it repeatedly calls `sieve_cache_test_hit`, which simply retrieves a cached value.
-   - Similarly, `test_sieve_miss` tests the behavior when many new values are added to the cache (forcing evictions and insertions).
+3. **LRU Cache Hit**:
+   - Min: **0.0058 ms**
+   - Max: **0.6672 ms**
+   - Mean: **0.0085 ms** (relative speed of **2.27**, slowest among hits).
+   - OPS: **173.0866 Kops/s**
 
----
+### Cache Misses:
+1. **Sieve Cache Miss**:
+   - Min: **0.0023 ms**
+   - Max: **0.0231 ms**
+   - Mean: **0.0023 ms** (relative speed of **1.0**, tied with the fastest miss).
+   - OPS: **353.069 Kops/s**
 
-# Benchmark Report
+2. **FIFO Cache Miss**:
+   - Min: **0.0030 ms**
+   - Max: **0.0643 ms**
+   - Mean: **0.0041 ms** (relative speed of **1.63**).
+   - OPS: **255.556 Kops/s**
 
-### Summary
-This report provides a detailed analysis of the benchmark results for four test cases. The benchmark metrics include **execution time** (minimum, maximum, mean, median), **standard deviation**, **interquartile range (IQR)**, **outliers**, **operations per second (OPS)**, and the **number of rounds and iterations** executed.
+3. **LRU Cache Miss**:
+   - Min: **0.0039 ms**
+   - Max: **0.1729 ms**
+   - Mean: **0.0051 ms** (relative speed of **2.01**, slowest among misses).
+   - OPS: **195.3724 Kops/s**
 
----
-
-## Benchmark Results
-
-![Benchmark Results](./Images/image-2.jpeg)
-
-
----
-
-## **Legend**
-
-### **1. Min, Max, and Mean (Time in ms)**
-- **Min:** Minimum time taken for a single iteration of the test.
-- **Max:** Maximum time taken for a single iteration of the test.
-- **Mean:** Average time taken for a single iteration of the test.
-
-### **2. StdDev (Standard Deviation)**
-- Shows the variation in execution time for a test. A higher value indicates more inconsistency.
-
-### **3. Median**
-- The middle value of all iterations, indicating a typical execution time.
-
-### **4. IQR (Interquartile Range)**
-- Measures the range within which the central 50% of the test execution times lie.
-
-### **5. Outliers**
-- Counts of test executions that fall outside the normal range. Shown in two formats:
-  - Left: Low outliers
-  - Right: High outliers
-
-### **6. OPS (Kops/s - Operations Per Second)**
-- Indicates the number of operations the test can execute per second. Higher is better.
-
-### **7. Rounds**
-- The total number of rounds the test was executed.
-
-### **8. Iterations**
-- Number of iterations performed per round. A higher iteration count can give more accurate benchmarking results.
+### Summary:
+- **Sieve Cache** is the fastest for both hits and misses, with the highest OPS.
+- **LRU Cache** is the slowest in all cases, with the lowest OPS.
 
 ---
 
-## **Key Observations**
+## **TimeIt Benchmark Results**
+![Benchmark Results](./Images/TimeIt-benchmarking-results.png)
 
-1. **Fastest Test:**
-   - **`test_sieve_hit`** achieved the highest operations per second (**2,657.7021 Kops/s**) and the lowest mean execution time (**0.0004 ms**), making it the fastest test.
+### Baseline:
+- **No-op Baseline**:
+  - Total Time: **0.026296 seconds**
+  - Average Time Per Round: **0.000000026 seconds**
 
-2. **Second Fastest Test:**
-   - **`test_fifo_hit`** had **2,289.1901 Kops/s**, performing close to `test_sieve_hit`, but slightly slower in terms of mean execution time (**0.0004 ms**).
+### Cache Hits:
+1. **Sieve Cache Hit**:
+   - Total Time: **2.779958 seconds**
+   - Average Time Per Round: **0.00002780 seconds**
 
-3. **Slowest Test:**
-   - **`test_lru_miss`** was the slowest, with the lowest operations per second (**1.3719 Kops/s**) and the highest mean execution time (**0.7289 ms**).
+2. **FIFO Cache Hit**:
+   - Total Time: **3.820931 seconds**
+   - Average Time Per Round: **0.00003821 seconds**
 
-4. **Miss vs Hit Performance:**
-   - Hit cases (e.g., `test_sieve_hit`, `test_fifo_hit`, and `test_lru_hit`) performed much faster than miss cases (`test_sieve_miss`, `test_fifo_miss`, and `test_lru_miss`).
+3. **LRU Cache Hit**:
+   - Total Time: **4.940739 seconds**
+   - Average Time Per Round: **0.00004941 seconds**
 
-5. **Outlier Variations:**
-   - **`test_fifo_hit`** showed the highest number of outliers (**3,175 low; 7,449 high**), suggesting runtime variability.
-   - Miss cases, such as `test_fifo_miss` and `test_lru_miss`, also showed significant variability, indicated by high outliers.
+### Cache Misses:
+1. **Sieve Cache Miss**:
+   - Total Time: **2.780835 seconds**
+   - Average Time Per Round: **0.00002780 seconds**
 
-6. **Standard Deviation:**
-   - Miss cases had significantly higher standard deviations compared to hit cases, with **`test_fifo_miss`** having the highest standard deviation (**0.1525 ms**).
+2. **FIFO Cache Miss**:
+   - Total Time: **3.860705 seconds**
+   - Average Time Per Round: **0.00003861 seconds**
 
-## **Best Performing Test**
-- **`test_sieve_hit`** is the best-performing test overall, with the fastest execution time and highest operations per second.
+3. **LRU Cache Miss**:
+   - Total Time: **4.899257 seconds**
+   - Average Time Per Round: **0.00004899 seconds**
 
-
-### Installation
-Before running the benchmarks, ensure you have the necessary dependencies installed:
-
-```bash
-pip install pytest pytest-benchmark
-```
-
-### Command to Run Benchmarks
-Run the following command to execute benchmarks and save results:
-```bash
-pytest test_sieve.py --benchmark-min-rounds=10
-```
+### Summary:
+- **Sieve Cache** consistently performs the best for both hits and misses, with the shortest total and average times.
+- **LRU Cache** is the slowest across all categories.
 
 ---
+
+## **Overall Best Cache**
+- From both **Pytest** and **TimeIt** results, the **Sieve Cache** is clearly the best performer for hits and misses, showcasing the fastest execution times and highest operations per second.
+
+
