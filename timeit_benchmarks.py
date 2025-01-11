@@ -1,5 +1,6 @@
 import os
 import timeit
+import statistics
 
 # Constants for benchmarking
 ITERATIONS = 10
@@ -28,11 +29,16 @@ def no_op():
 def run_timeit_benchmarks():
     print("\nTimeit Benchmarks:")
 
+    # Baseline Benchmark
     print(f"\nBaseline Test ({ROUNDS} rounds):")
-    baseline = timeit.timeit('no_op()', setup="from __main__ import no_op", number=ROUNDS)
-    print(f"No-op Baseline: {baseline:.6f} seconds")
-    print(f"Average time per round: {baseline/ROUNDS:.9f} seconds")
+    baseline_times = [timeit.timeit('no_op()', setup="from __main__ import no_op", number=ROUNDS) for _ in range(ITERATIONS)]
+    baseline_avg = statistics.mean(baseline_times)
+    baseline_std = statistics.stdev(baseline_times) if len(baseline_times) > 1 else 0
+    
+    print(f"No-op Baseline: Avg = {baseline_avg:.6f} seconds, Std Dev = {baseline_std:.6f} seconds")
+    print(f"Average time per round: {baseline_avg/ROUNDS:.9f} seconds")
 
+    # Hit Tests
     print(f"\nCache Hit Tests ({ROUNDS} rounds, {ITERATIONS} iterations each):")
     hit_setup = """
 from __main__ import func_sieve, func_lru, func_fifo, ITERATIONS
@@ -46,20 +52,31 @@ def hit_test(func):
         func(1)
 """
 
-    sieve_hit = timeit.timeit('hit_test(func_sieve)', setup=hit_setup, number=ROUNDS)
-    lru_hit = timeit.timeit('hit_test(func_lru)', setup=hit_setup, number=ROUNDS)
-    fifo_hit = timeit.timeit('hit_test(func_fifo)', setup=hit_setup, number=ROUNDS)
+    # Benchmark hit tests for each cache type
+    def benchmark_hits(func_name):
+        times = [
+            timeit.timeit(f'hit_test({func_name})', setup=hit_setup, number=ROUNDS) 
+            for _ in range(ITERATIONS)
+        ]
+        avg_time = statistics.mean(times)
+        std_dev = statistics.stdev(times) if len(times) > 1 else 0
+        return avg_time, std_dev
 
-    print("\nTotal time for all rounds:")
-    print(f"Sieve Cache Hit: {sieve_hit:.6f} seconds")
-    print(f"LRU Cache Hit: {lru_hit:.6f} seconds")
-    print(f"FIFO Cache Hit: {fifo_hit:.6f} seconds")
+    sieve_hit_avg, sieve_hit_std = benchmark_hits('func_sieve')
+    lru_hit_avg, lru_hit_std = benchmark_hits('func_lru')
+    fifo_hit_avg, fifo_hit_std = benchmark_hits('func_fifo')
+
+    print("\nCache Hit Results:")
+    print(f"Sieve Cache Hit: Avg = {sieve_hit_avg:.6f} s, Std Dev = {sieve_hit_std:.6f} s")
+    print(f"LRU Cache Hit: Avg = {lru_hit_avg:.6f} s, Std Dev = {lru_hit_std:.6f} s")
+    print(f"FIFO Cache Hit: Avg = {fifo_hit_avg:.6f} s, Std Dev = {fifo_hit_std:.6f} s")
 
     print("\nAverage time per round:")
-    print(f"Sieve Cache Hit: {sieve_hit/ROUNDS:.9f} seconds")
-    print(f"LRU Cache Hit: {lru_hit/ROUNDS:.9f} seconds")
-    print(f"FIFO Cache Hit: {fifo_hit/ROUNDS:.9f} seconds")
+    print(f"Sieve Cache Hit: {sieve_hit_avg/ROUNDS:.9f} s")
+    print(f"LRU Cache Hit: {lru_hit_avg/ROUNDS:.9f} s")
+    print(f"FIFO Cache Hit: {fifo_hit_avg/ROUNDS:.9f} s")
 
+    # Miss Tests
     print(f"\nCache Miss Tests ({ROUNDS} rounds, {ITERATIONS} iterations each):")
     miss_setup = """
 from __main__ import func_sieve, func_lru, func_fifo, ITERATIONS
@@ -69,19 +86,29 @@ def miss_test(func):
         func(i)
 """
 
-    sieve_miss = timeit.timeit('miss_test(func_sieve)', setup=miss_setup, number=ROUNDS)
-    lru_miss = timeit.timeit('miss_test(func_lru)', setup=miss_setup, number=ROUNDS)
-    fifo_miss = timeit.timeit('miss_test(func_fifo)', setup=miss_setup, number=ROUNDS)
+    # Benchmark miss tests for each cache type
+    def benchmark_misses(func_name):
+        times = [
+            timeit.timeit(f'miss_test({func_name})', setup=miss_setup, number=ROUNDS) 
+            for _ in range(ITERATIONS)
+        ]
+        avg_time = statistics.mean(times)
+        std_dev = statistics.stdev(times) if len(times) > 1 else 0
+        return avg_time, std_dev
 
-    print("\nTotal time for all rounds:")
-    print(f"Sieve Cache Miss: {sieve_miss:.6f} seconds")
-    print(f"LRU Cache Miss: {lru_miss:.6f} seconds")
-    print(f"FIFO Cache Miss: {fifo_miss:.6f} seconds")
+    sieve_miss_avg, sieve_miss_std = benchmark_misses('func_sieve')
+    lru_miss_avg, lru_miss_std = benchmark_misses('func_lru')
+    fifo_miss_avg, fifo_miss_std = benchmark_misses('func_fifo')
+
+    print("\nCache Miss Results:")
+    print(f"Sieve Cache Miss: Avg = {sieve_miss_avg:.6f} s, Std Dev = {sieve_miss_std:.6f} s")
+    print(f"LRU Cache Miss: Avg = {lru_miss_avg:.6f} s, Std Dev = {lru_miss_std:.6f} s")
+    print(f"FIFO Cache Miss: Avg = {fifo_miss_avg:.6f} s, Std Dev = {fifo_miss_std:.6f} s")
 
     print("\nAverage time per round:")
-    print(f"Sieve Cache Miss: {sieve_miss/ROUNDS:.9f} seconds")
-    print(f"LRU Cache Miss: {lru_miss/ROUNDS:.9f} seconds")
-    print(f"FIFO Cache Miss: {fifo_miss/ROUNDS:.9f} seconds")
+    print(f"Sieve Cache Miss: {sieve_miss_avg/ROUNDS:.9f} s")
+    print(f"LRU Cache Miss: {lru_miss_avg/ROUNDS:.9f} s")
+    print(f"FIFO Cache Miss: {fifo_miss_avg/ROUNDS:.9f} s")
 
 if __name__ == "__main__":
     run_timeit_benchmarks()
